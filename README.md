@@ -104,6 +104,7 @@ lib/
 ├── colors.dart                    # 앱 전역 색상 설정  
 └──  main.dart                     # 앱 실행 진입점  
 
-##DATABASE
-<img width="961" height="541" alt="image" src="https://github.com/user-attachments/assets/300ddf27-b5f0-40df-b7e8-310f876fc13d" />
+## DATABASE
+<img width="1053" height="781" alt="image" src="https://github.com/user-attachments/assets/01578c27-ad83-457e-9432-a1ff7ba9f852" />
+
 
