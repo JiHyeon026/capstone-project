@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
                 .send({ message: '이미 사용 중인 사용자명입니다.' });
         }
 
-        // 🔥 비밀번호를 해싱하지 않고 그대로 저장
+
         const [result] = await db
             .promise()
             .query(
@@ -71,7 +71,7 @@ router.post('/login', (req, res) => {
 
             const user = results[0];
 
-            // 🔥 비밀번호를 그대로 비교
+
             if (password !== user.password) {
                 return res
                     .status(400)
@@ -154,7 +154,7 @@ router.delete('/:username', async (req, res) => {
     } catch (error) {
         await db.promise().query('ROLLBACK');
         console.error('Error deleting user:', error);
-        res.status(500).json({ message: '계정 삭제 중 오류가 발생했습니다.' });
+        res.status(500).json({ message: '계정 삭제 중 오류가 .' });
     }
 });
 
