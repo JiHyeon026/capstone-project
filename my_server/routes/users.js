@@ -6,7 +6,6 @@ const path = require('path');
 const fs = require('fs');
 const { profilestorage } = require('../config/multerConfig');
 
-// 사용자 추가
 router.post('/', async (req, res) => {
     try {
         const { username, email, password, nickname } = req.body;
@@ -35,12 +34,12 @@ router.post('/', async (req, res) => {
                 .send({ message: '이미 사용 중인 사용자명입니다.' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // 🔥 비밀번호를 해싱하지 않고 그대로 저장
         const [result] = await db
             .promise()
             .query(
                 'INSERT INTO users (username, email, password, nickname) VALUES (?, ?, ?, ?)',
-                [username, email, hashedPassword, nickname]
+                [username, email, password, nickname]
             );
 
         res.status(201).send({
@@ -71,15 +70,15 @@ router.post('/login', (req, res) => {
             }
 
             const user = results[0];
-            bcrypt.compare(password, user.password, (err, isMatch) => {
-                if (err) return res.status(500).send(err);
-                if (!isMatch) {
-                    return res
-                        .status(400)
-                        .send({ message: '비밀번호가 일치하지 않습니다.' });
-                }
-                res.status(200).send({ message: '로그인 성공' });
-            });
+
+            // 🔥 비밀번호를 그대로 비교
+            if (password !== user.password) {
+                return res
+                    .status(400)
+                    .send({ message: '비밀번호가 일치하지 않습니다.' });
+            }
+
+            res.status(200).send({ message: '로그인 성공' });
         }
     );
 });
@@ -91,7 +90,6 @@ router.delete('/:username', async (req, res) => {
     try {
         await db.promise().query('START TRANSACTION');
 
-        // 사용자 확인
         const [user] = await db
             .promise()
             .query('SELECT user_id, role FROM users WHERE username = ?', [
@@ -105,14 +103,12 @@ router.delete('/:username', async (req, res) => {
                 .json({ message: '사용자를 찾을 수 없습니다.' });
         }
 
-        // 사용자의 게시글에 연결된 이미지 파일 삭제
         const [posts] = await db
             .promise()
             .query('SELECT image_url FROM posts WHERE user_id = ?', [
                 user[0].user_id,
             ]);
 
-        // 이미지 파일 삭제
         for (const post of posts) {
             if (post.image_url) {
                 const imagePath = post.image_url.split('/uploads/')[1];
@@ -123,12 +119,10 @@ router.delete('/:username', async (req, res) => {
             }
         }
 
-        // 사용자의 게시글 삭제
         await db
             .promise()
             .query('DELETE FROM posts WHERE user_id = ?', [user[0].user_id]);
 
-        // 리더인 경우 초대 코드 삭제
         if (user[0].role === 'leader') {
             await db
                 .promise()
@@ -137,17 +131,13 @@ router.delete('/:username', async (req, res) => {
                 ]);
         }
 
-        // 연동 관계 삭제
-        // 리더인 경우 모든 멤버와의 관계 삭제
         if (user[0].role === 'leader') {
             await db
                 .promise()
                 .query('DELETE FROM relationships WHERE leader_id = ?', [
                     user[0].user_id,
                 ]);
-        }
-        // 멤버인 경우 리더와의 관계 삭제
-        else {
+        } else {
             await db
                 .promise()
                 .query('DELETE FROM relationships WHERE member_id = ?', [
@@ -155,7 +145,6 @@ router.delete('/:username', async (req, res) => {
                 ]);
         }
 
-        // 사용자 계정 삭제
         await db
             .promise()
             .query('DELETE FROM users WHERE user_id = ?', [user[0].user_id]);
